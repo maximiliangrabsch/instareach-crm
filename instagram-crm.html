@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InstaReach CRM</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0f11;
+    --surface: #161719;
+    --surface2: #1e2023;
+    --surface3: #252729;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --text: #f0f0ee;
+    --muted: #7a7a78;
+    --muted2: #4a4a48;
+    --accent: #6c63ff;
+    --accent2: #8b85ff;
+    --green: #3ecf8e;
+    --amber: #f5a623;
+    --red: #ff5757;
+    --blue: #4da6ff;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+
+  /* LOGIN */
+  #login-screen {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: var(--bg);
+    background-image: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(108,99,255,0.15) 0%, transparent 70%);
+  }
+  .login-card {
+    background: var(--surface); border: 1px solid var(--border2); border-radius: 20px;
+    padding: 48px 40px; width: 380px; text-align: center;
+  }
+  .login-logo { width: 48px; height: 48px; background: var(--accent); border-radius: 14px; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; font-size: 22px; }
+  .login-title { font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+  .login-sub { font-size: 14px; color: var(--muted); margin-bottom: 32px; }
+  .login-card input { width: 100%; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 14px; font-family: 'DM Sans', sans-serif; color: var(--text); margin-bottom: 12px; outline: none; transition: border-color 0.2s; }
+  .login-card input:focus { border-color: var(--accent); }
+  .login-card input::placeholder { color: var(--muted); }
+  .btn-primary { width: 100%; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); padding: 13px; font-size: 14px; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: background 0.2s, transform 0.1s; }
+  .btn-primary:hover { background: var(--accent2); }
+  .btn-primary:active { transform: scale(0.98); }
+  .login-error { color: var(--red); font-size: 13px; margin-top: 10px; display: none; }
+  .login-hint { font-size: 12px; color: var(--muted2); margin-top: 20px; }
+
+  /* APP LAYOUT */
+  #app { display: none; height: 100vh; flex-direction: row; }
+  .sidebar {
+    width: 220px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; padding: 20px 12px;
+  }
+  .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 4px 8px 20px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .sidebar-logo-icon { width: 32px; height: 32px; background: var(--accent); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+  .sidebar-logo-text { font-size: 15px; font-weight: 600; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: var(--radius-sm);
+    font-size: 14px; color: var(--muted); cursor: pointer; transition: all 0.15s; margin-bottom: 2px;
+    border: 1px solid transparent;
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: rgba(108,99,255,0.12); color: var(--accent2); border-color: rgba(108,99,255,0.2); }
+  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+  .nav-badge { margin-left: auto; background: var(--green); color: #0e0f11; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 99px; }
+  .nav-badge.amber { background: var(--amber); }
+  .sidebar-section { font-size: 11px; font-weight: 500; color: var(--muted2); text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 10px 6px; margin-top: 8px; }
+  .sidebar-bottom { margin-top: auto; border-top: 1px solid var(--border); padding-top: 16px; }
+  .bot-status { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: var(--radius-sm); background: var(--surface2); margin-bottom: 8px; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); flex-shrink: 0; box-shadow: 0 0 6px var(--green); animation: pulse 2s infinite; }
+  .status-dot.off { background: var(--red); box-shadow: 0 0 6px var(--red); animation: none; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+  .status-label { font-size: 12px; color: var(--muted); }
+  .status-label span { color: var(--text); font-weight: 500; }
+  .btn-stop { width: 100%; background: rgba(255,87,87,0.1); color: var(--red); border: 1px solid rgba(255,87,87,0.25); border-radius: var(--radius-sm); padding: 9px; font-size: 13px; font-weight: 500; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.2s; }
+  .btn-stop:hover { background: rgba(255,87,87,0.2); }
+
+  /* MAIN */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .topbar { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; background: var(--surface); }
+  .topbar-title { font-size: 16px; font-weight: 600; flex: 1; }
+  .topbar-sub { font-size: 13px; color: var(--muted); }
+  .btn-sm { padding: 8px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; font-family: 'DM Sans', sans-serif; cursor: pointer; border: 1px solid var(--border2); background: var(--surface2); color: var(--text); transition: all 0.15s; }
+  .btn-sm:hover { background: var(--surface3); border-color: var(--border2); }
+  .btn-sm.accent { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn-sm.accent:hover { background: var(--accent2); }
+  .content { flex: 1; overflow-y: auto; padding: 24px; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* STATS */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
+  .stat-label { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+  .stat-value { font-size: 28px; font-weight: 600; font-family: 'DM Mono', monospace; }
+  .stat-value.blue { color: var(--blue); }
+  .stat-value.green { color: var(--green); }
+  .stat-value.amber { color: var(--amber); }
+  .stat-value.red { color: var(--red); }
+  .stat-delta { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  /* TABLE */
+  .table-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .table-header-title { font-size: 14px; font-weight: 500; }
+  .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { padding: 11px 16px; text-align: left; font-size: 11px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border); background: var(--surface2); }
+  td { padding: 13px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #fff; flex-shrink: 0; }
+  .contact-cell { display: flex; align-items: center; gap: 10px; }
+  .contact-info { display: flex; flex-direction: column; }
+  .contact-handle { font-weight: 500; font-size: 13px; }
+  .contact-note { font-size: 12px; color: var(--muted); }
+  .status-pill { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 99px; font-size: 12px; font-weight: 500; }
+  .status-pill.sent { background: rgba(77,166,255,0.1); color: var(--blue); }
+  .status-pill.replied { background: rgba(62,207,142,0.1); color: var(--green); }
+  .status-pill.pending { background: rgba(245,166,35,0.1); color: var(--amber); }
+  .status-pill.blocked { background: rgba(255,87,87,0.1); color: var(--red); }
+  .status-pill::before { content:''; width:6px; height:6px; border-radius:50%; background: currentColor; }
+  .msg-preview { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 12px; font-family: 'DM Mono', monospace; }
+  .action-btn { padding: 5px 12px; border-radius: 6px; font-size: 12px; font-family: 'DM Sans', sans-serif; cursor: pointer; border: 1px solid var(--border2); background: transparent; color: var(--muted); transition: all 0.15s; }
+  .action-btn:hover { border-color: var(--red); color: var(--red); }
+  .action-btn.send { border-color: rgba(108,99,255,0.4); color: var(--accent2); }
+  .action-btn.send:hover { background: rgba(108,99,255,0.1); }
+
+  /* REPLIES */
+  .reply-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; margin-bottom: 12px; }
+  .reply-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .reply-time { margin-left: auto; font-size: 12px; color: var(--muted); }
+  .reply-msg { font-size: 14px; color: var(--text); line-height: 1.6; margin-bottom: 12px; }
+  .reply-ai { background: rgba(108,99,255,0.08); border: 1px solid rgba(108,99,255,0.2); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 13px; color: var(--accent2); line-height: 1.6; }
+  .reply-ai-label { font-size: 11px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .reply-actions { display: flex; gap: 8px; margin-top: 10px; }
+
+  /* AI SETTINGS */
+  .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .settings-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+  .settings-card.full { grid-column: 1 / -1; }
+  .settings-card label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 8px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+  .settings-card textarea, .settings-card input[type=text], .settings-card input[type=password] {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius-sm);
+    padding: 10px 12px; font-size: 13px; font-family: 'DM Sans', sans-serif; color: var(--text);
+    outline: none; transition: border-color 0.2s; resize: vertical;
+  }
+  .settings-card textarea:focus, .settings-card input:focus { border-color: var(--accent); }
+  .settings-card textarea::placeholder, .settings-card input::placeholder { color: var(--muted2); }
+  .tone-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+  .tone-btn { padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--border2); background: var(--surface2); color: var(--muted); font-size: 13px; font-family: 'DM Sans', sans-serif; cursor: pointer; text-align: center; transition: all 0.15s; }
+  .tone-btn:hover { border-color: var(--accent); color: var(--text); }
+  .tone-btn.active { border-color: var(--accent); background: rgba(108,99,255,0.12); color: var(--accent2); font-weight: 500; }
+  .preview-box { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; font-size: 13px; line-height: 1.7; color: var(--text); min-height: 90px; white-space: pre-wrap; font-family: 'DM Mono', monospace; }
+  .settings-card select { width: 100%; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 13px; font-family: 'DM Sans', sans-serif; color: var(--text); outline: none; appearance: none; cursor: pointer; }
+  .range-row { display: flex; align-items: center; gap: 12px; }
+  .range-row input[type=range] { flex: 1; accent-color: var(--accent); }
+  .range-val { font-size: 14px; font-weight: 600; font-family: 'DM Mono', monospace; color: var(--accent2); min-width: 40px; text-align: right; }
+
+  /* ADMIN */
+  .user-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; margin-bottom: 10px; display: flex; align-items: center; gap: 14px; }
+  .user-info { flex: 1; }
+  .user-name { font-size: 14px; font-weight: 500; }
+  .user-pass { font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; }
+  .user-role { padding: 3px 8px; border-radius: 99px; font-size: 11px; font-weight: 600; }
+  .user-role.admin { background: rgba(108,99,255,0.15); color: var(--accent2); }
+  .user-role.user { background: rgba(62,207,142,0.1); color: var(--green); }
+  .add-user-form { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-top: 16px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end; }
+
+  /* ADD CONTACT MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border2); border-radius: 16px; padding: 28px; width: 420px; }
+  .modal h3 { font-size: 16px; font-weight: 600; margin-bottom: 20px; }
+  .modal .field { margin-bottom: 14px; }
+  .modal .field label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .modal .field input { width: 100%; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 14px; font-family: 'DM Sans', sans-serif; color: var(--text); outline: none; }
+  .modal .field input:focus { border-color: var(--accent); }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+  /* NOTIFICATION */
+  .notif { position: fixed; bottom: 24px; right: 24px; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius); padding: 14px 18px; font-size: 13px; z-index: 200; transform: translateY(80px); opacity: 0; transition: all 0.3s; max-width: 320px; }
+  .notif.show { transform: translateY(0); opacity: 1; }
+  .notif.green { border-color: rgba(62,207,142,0.3); }
+  .notif.red { border-color: rgba(255,87,87,0.3); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 2px; }
+
+  /* COUNTDOWN BAR */
+  .countdown-bar { background: rgba(108,99,255,0.08); border-top: 1px solid rgba(108,99,255,0.2); padding: 10px 24px; display: flex; align-items: center; gap: 14px; font-size: 13px; }
+  .countdown-label { color: var(--muted); }
+  .countdown-num { font-family: 'DM Mono', monospace; font-weight: 600; color: var(--accent2); }
+  .progress-bar { flex: 1; height: 3px; background: var(--surface3); border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 1s linear; }
+
+  .section-head { font-size: 13px; font-weight: 500; color: var(--muted); margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .empty-state { text-align: center; padding: 48px; color: var(--muted); font-size: 14px; }
+  .tag { font-size: 11px; padding: 3px 8px; border-radius: 99px; background: var(--surface3); color: var(--muted); }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">📊</div>
+    <div class="login-title">InstaReach CRM</div>
+    <div class="login-sub">Einladungs-Login · Nur autorisierte Nutzer</div>
+    <input type="text" id="login-user" placeholder="Benutzername" />
+    <input type="password" id="login-pass" placeholder="Passwort" onkeydown="if(event.key==='Enter')doLogin()" />
+    <button class="btn-primary" onclick="doLogin()">Anmelden</button>
+    <div class="login-error" id="login-error">Falscher Benutzername oder Passwort.</div>
+    <div class="login-hint">Zugang nur auf Einladung · Kontakt: admin</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">📊</div>
+      <div class="sidebar-logo-text">InstaReach</div>
+    </div>
+    <div class="sidebar-section">Übersicht</div>
+    <div class="nav-item active" onclick="showPanel('contacts',this)">
+      <span class="nav-icon">👥</span> Kontakte
+      <span class="nav-badge amber" id="badge-pending">2</span>
+    </div>
+    <div class="nav-item" onclick="showPanel('replies',this)">
+      <span class="nav-icon">💬</span> Antworten
+      <span class="nav-badge" id="badge-replies">3</span>
+    </div>
+    <div class="sidebar-section">Konfiguration</div>
+    <div class="nav-item" onclick="showPanel('ai',this)">
+      <span class="nav-icon">🤖</span> KI & Nachrichten
+    </div>
+    <div class="nav-item" onclick="showPanel('search',this)">
+      <span class="nav-icon">🔍</span> Zielgruppe
+    </div>
+    <div class="nav-item" onclick="showPanel('admin',this)" id="admin-nav" style="display:none">
+      <span class="nav-icon">⚙️</span> Nutzerverwaltung
+    </div>
+    <div class="sidebar-bottom">
+      <div class="bot-status">
+        <div class="status-dot" id="status-dot"></div>
+        <div class="status-label">Bot: <span id="status-text">Aktiv</span></div>
+      </div>
+      <button class="btn-stop" id="toggle-btn" onclick="toggleBot()">⏸ Bot pausieren</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title" id="topbar-title">Kontakte & Verlauf</div>
+        <div class="topbar-sub" id="topbar-sub">Übersicht aller angeschriebenen Profile</div>
+      </div>
+      <button class="btn-sm" onclick="openModal()">+ Kontakt</button>
+      <button class="btn-sm accent" onclick="simulateSend()">▶ Jetzt senden</button>
+      <button class="btn-sm" onclick="doLogout()" style="margin-left:8px;color:var(--muted)">Abmelden</button>
+    </div>
+
+    <div class="content">
+
+      <!-- CONTACTS PANEL -->
+      <div class="panel active" id="panel-contacts">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Angeschrieben</div>
+            <div class="stat-value blue" id="s-sent">9</div>
+            <div class="stat-delta">Gesamt versendet</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Antworten</div>
+            <div class="stat-value green" id="s-replied">3</div>
+            <div class="stat-delta" id="s-rate">33% Reply-Rate</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Ausstehend</div>
+            <div class="stat-value amber" id="s-pending">2</div>
+            <div class="stat-delta">Warten auf Antwort</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Blockiert</div>
+            <div class="stat-value red" id="s-blocked">1</div>
+            <div class="stat-delta">Nicht zustellbar</div>
+          </div>
+        </div>
+        <div class="table-header">
+          <div class="table-header-title">Alle Kontakte</div>
+          <span class="tag" id="contact-count">12 Einträge</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Profil</th>
+                <th>Status</th>
+                <th>Gesendet</th>
+                <th>Nachricht</th>
+                <th>Aktion</th>
+              </tr>
+            </thead>
+            <tbody id="contacts-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- REPLIES PANEL -->
+      <div class="panel" id="panel-replies">
+        <div class="section-head">Eingegangene Antworten</div>
+        <div id="replies-list"></div>
+      </div>
+
+      <!-- AI PANEL -->
+      <div class="panel" id="panel-ai">
+        <div class="settings-grid">
+          <div class="settings-card full">
+            <label>Deine Dienstleistung</label>
+            <textarea id="ai-service" rows="3" placeholder="Was bietest du an? Für wen? Was ist dein Mehrwert?">Ich biete professionelles Social Media Management und Immobilienmarketing für Bauträger und Immobilienentwickler an. Ich helfe dabei, hochwertige Projekte durch zielgerichtete Instagram-Kampagnen zu vermarkten.</textarea>
+          </div>
+          <div class="settings-card full">
+            <label>Ton der Nachricht</label>
+            <div class="tone-grid" id="tone-grid">
+              <button class="tone-btn active" onclick="selectTone(this,'freundlich')">😊 Freundlich</button>
+              <button class="tone-btn" onclick="selectTone(this,'professionell')">💼 Professionell</button>
+              <button class="tone-btn" onclick="selectTone(this,'locker')">🤙 Locker & Direkt</button>
+              <button class="tone-btn" onclick="selectTone(this,'exklusiv')">✨ Exklusiv</button>
+              <button class="tone-btn" onclick="selectTone(this,'neugierig')">🤔 Neugierig</button>
+              <button class="tone-btn" onclick="selectTone(this,'kurz')">⚡ Super kurz</button>
+            </div>
+          </div>
+          <div class="settings-card full">
+            <label>Nachrichten-Vorschau</label>
+            <div class="preview-box" id="ai-preview">Hey [Name]! Ich hab deinen Account entdeckt und finde deinen Immobilien-Content wirklich stark. Ich spezialisiere mich auf Social Media Marketing für Bauträger – würde gerne kurz zeigen was ich für euch tun kann. Interesse? 😊</div>
+            <button class="btn-sm accent" style="margin-top:10px;" onclick="regenPreview()">🔄 Neue Variante generieren</button>
+          </div>
+          <div class="settings-card">
+            <label>Nachrichten pro Tag (Limit)</label>
+            <div class="range-row">
+              <input type="range" min="5" max="50" value="20" oninput="document.getElementById('lim-val').textContent=this.value+' DMs'" id="limit-range">
+              <div class="range-val" id="lim-val">20 DMs</div>
+            </div>
+          </div>
+          <div class="settings-card">
+            <label>Pause zwischen Nachrichten</label>
+            <div class="range-row">
+              <input type="range" min="30" max="300" value="90" step="10" oninput="document.getElementById('delay-val').textContent=this.value+'s'" id="delay-range">
+              <div class="range-val" id="delay-val">90s</div>
+            </div>
+          </div>
+          <div class="settings-card full">
+            <label>OpenAI API Key (für echte KI-Nachrichten)</label>
+            <input type="password" id="api-key" placeholder="sk-... (optional für Prototyp)" />
+            <div style="font-size:12px;color:var(--muted);margin-top:6px;">Ohne Key werden Demo-Nachrichten verwendet. Wird nur lokal gespeichert.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SEARCH PANEL -->
+      <div class="panel" id="panel-search">
+        <div class="settings-grid">
+          <div class="settings-card full">
+            <label>Zielgruppe – Hashtags & Branchen</label>
+            <textarea rows="3" id="hashtags">#immobilien #bautraeger #neubau #immobilienentwickler #projektentwickler #immobilieninvestor #realestate #neubauprojekt</textarea>
+          </div>
+          <div class="settings-card">
+            <label>Branchenfilter</label>
+            <select>
+              <option>Immobilien & Bauträger</option>
+              <option>Projektentwickler</option>
+              <option>Immobilienmakler</option>
+              <option>Architektur & Planung</option>
+              <option>Alle oben genannten</option>
+            </select>
+          </div>
+          <div class="settings-card">
+            <label>Mindestfolger-Anzahl</label>
+            <div class="range-row">
+              <input type="range" min="0" max="50000" step="500" value="1000" oninput="document.getElementById('follower-val').textContent=parseInt(this.value).toLocaleString()">
+              <div class="range-val" id="follower-val">1.000</div>
+            </div>
+          </div>
+          <div class="settings-card full">
+            <label>Ausschluss-Keywords (Profile überspringen die diese Wörter enthalten)</label>
+            <input type="text" value="competitor, agency, marketing" placeholder="Kommagetrennt..." />
+          </div>
+          <div class="settings-card full" style="background:rgba(108,99,255,0.05);border-color:rgba(108,99,255,0.2);">
+            <div style="font-size:13px;color:var(--accent2);margin-bottom:8px;font-weight:500;">⚠️ Instagram API Hinweis</div>
+            <div style="font-size:13px;color:var(--muted);line-height:1.7;">Die echte Instagram-Suche benötigt die offizielle Meta Graph API mit genehmigtem Business-Account. Im Prototyp werden Demo-Profile verwendet. Für den echten Betrieb wird ein Meta Developer Account mit granted permissions benötigt.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADMIN PANEL -->
+      <div class="panel" id="panel-admin">
+        <div class="section-head">Nutzerverwaltung</div>
+        <div id="user-list"></div>
+        <div class="add-user-form">
+          <div style="font-size:14px;font-weight:500;margin-bottom:14px;">Neuen Nutzer hinzufügen</div>
+          <div class="form-row">
+            <div>
+              <div style="font-size:12px;color:var(--muted);margin-bottom:5px;">Benutzername</div>
+              <input type="text" id="new-username" placeholder="z.B. thomas" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:9px 12px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;" />
+            </div>
+            <div>
+              <div style="font-size:12px;color:var(--muted);margin-bottom:5px;">Passwort</div>
+              <input type="text" id="new-password" placeholder="z.B. sicher123" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:9px 12px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;" />
+            </div>
+            <button class="btn-sm accent" style="height:38px;margin-top:auto;" onclick="addUser()">+ Hinzufügen</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end content -->
+
+    <!-- COUNTDOWN BAR -->
+    <div class="countdown-bar" id="countdown-bar" style="display:none;">
+      <span class="countdown-label">Nächste Nachricht in</span>
+      <span class="countdown-num" id="countdown-num">45s</span>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:100%"></div></div>
+      <button class="btn-sm" onclick="toggleBot()" style="flex-shrink:0">⏸ Pause</button>
+    </div>
+
+  </div><!-- end main -->
+</div><!-- end app -->
+
+<!-- ADD CONTACT MODAL -->
+<div class="modal-overlay" id="modal-add">
+  <div class="modal">
+    <h3>Kontakt manuell hinzufügen</h3>
+    <div class="field"><label>Instagram Handle</label><input type="text" id="new-handle" placeholder="@benutzername" /></div>
+    <div class="field"><label>Branche / Notiz</label><input type="text" id="new-note" placeholder="z.B. Bauträger München" /></div>
+    <div class="field"><label>Priorität</label>
+      <select id="new-prio" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:9px 12px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;">
+        <option>Normal</option><option>Hoch</option><option>Niedrig</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-sm" onclick="closeModal()">Abbrechen</button>
+      <button class="btn-sm accent" onclick="addContact()">Hinzufügen & in Queue</button>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIFICATION -->
+<div class="notif" id="notif"></div>
+
+<script>
+// ─── USERS (passwörter hier ändern!) ───────────────────────────
+let USERS = [
+  { name: 'admin', pass: 'admin123', role: 'admin' },
+  { name: 'thomas', pass: 'reach2024', role: 'user' },
+  { name: 'sara', pass: 'insta456', role: 'user' },
+];
+
+// ─── DATA ───────────────────────────────────────────────────────
+let contacts = [
+  { handle:'@bautraeger_muenchen', note:'Bauträger Bayern', status:'replied', date:'25.04.2025', msg:'Hey! Ich helfe Bauträgern bei Social Media Marketing...' },
+  { handle:'@immobilien_berlin', note:'Immobilienmakler', status:'sent', date:'25.04.2025', msg:'Hey! Euer Portfolio auf Instagram sieht stark aus...' },
+  { handle:'@projektentwickler_hh', note:'Projektentwickler', status:'replied', date:'24.04.2025', msg:'Hey! Ich bin auf euren Account aufmerksam geworden...' },
+  { handle:'@neubau_frankfurt', note:'Neubauprojekte', status:'pending', date:'24.04.2025', msg:'Hey! Eure Neubauprojekte sehen sehr hochwertig aus...' },
+  { handle:'@immoinvest_de', note:'Investor', status:'sent', date:'23.04.2025', msg:'Hey! Ich spezialisiere mich auf Immobilienmarketing...' },
+  { handle:'@architektur_wien', note:'Architekturbüro', status:'blocked', date:'23.04.2025', msg:'Hey! Euer Architektur-Content ist beeindruckend...' },
+  { handle:'@realestate_swiss', note:'Schweizer Markt', status:'replied', date:'22.04.2025', msg:'Hey! Ich helfe Immobilienunternehmen auf Instagram...' },
+  { handle:'@wohnbau_gmbh', note:'Wohnungsbau', status:'sent', date:'22.04.2025', msg:'Hey! Euer Wohnbauprojekt sieht toll aus...' },
+  { handle:'@immomakler_nrw', note:'NRW Makler', status:'pending', date:'21.04.2025', msg:'Hey! Ich bin Experte für Immobilien auf Instagram...' },
+  { handle:'@luxusimmo', note:'Luxusimmobilien', status:'sent', date:'21.04.2025', msg:'Hey! Euer Luxus-Portfolio beeindruckt mich...' },
+  { handle:'@bauprojekt_berlin', note:'Berliner Neubauten', status:'sent', date:'20.04.2025', msg:'Hey! Ich kenne euren Instagram-Account...' },
+  { handle:'@grundstueck_invest', note:'Grundstücke', status:'sent', date:'20.04.2025', msg:'Hey! Ich helfe Investoren auf Instagram...' },
+];
+
+const replies = [
+  { handle:'@bautraeger_muenchen', text:'Hi! Das klingt interessant. Was genau machst du und was kostet das?', time:'Heute, 11:23', ai:'Super, freut mich! Ich erkläre kurz: Ich übernehme euren kompletten Instagram-Auftritt – Content, Strategie, Akquise. Kosten je nach Paket 500–1500€/Monat. Hätte ich 15 Min für einen kurzen Call?' },
+  { handle:'@projektentwickler_hh', text:'Danke für deine Nachricht! Schick mir mal mehr Infos zu deinen Leistungen.', time:'Gestern, 18:05', ai:'Sehr gerne! Ich schicke euch meine Leistungsübersicht. Kurz zusammengefasst: ich helfe Projektentwicklern, ihre Neubauprojekte auf Instagram zu vermarkten und qualifizierte Käufer zu erreichen. Wann passt ein kurzer Call?' },
+  { handle:'@realestate_swiss', text:'Interessant! Wir suchen gerade jemanden für unseren Schweizer Markt.', time:'Vor 2 Tagen', ai:'Perfekt, das trifft sich gut! Ich habe bereits Erfahrung mit dem deutschsprachigen Markt inkl. Schweiz. Ich würde euch gerne zeigen was ich für vergleichbare Projekte erreicht habe. Wann habt ihr 20 Minuten?' },
+];
+
+const tones = {
+  freundlich: 'Hey [Name]! Ich hab deinen Account entdeckt und finde deinen Immobilien-Content wirklich stark. Ich spezialisiere mich auf Social Media Marketing für Bauträger – würde gerne kurz zeigen was ich für euch tun kann. Interesse? 😊',
+  professionell: 'Guten Tag [Name], ich bin auf Ihren Account aufmerksam geworden und schätze Ihren professionellen Immobilienauftritt sehr. Ich unterstütze Bauträger und Projektentwickler bei der strategischen Vermarktung auf Instagram. Hätten Sie Interesse an einem kurzen Austausch?',
+  locker: 'Hey [Name], euer Immobilien-Content hat mich direkt angesprochen! Ich mache Social Media für Bauträger und Projektentwickler – check mal mein Profil. Bock auf Zusammenarbeit? 🔥',
+  exklusiv: 'Hey [Name], ich nehme aktuell nur 2 neue Kunden im Immobilienbereich an – euer Account hat mich wirklich überzeugt. Wäre ein kurzes Gespräch möglich? ✨',
+  neugierig: 'Hey [Name]! Ich frage mich: Habt ihr schon mal überlegt was mit professionellem Social Media aus euren Projekten werden könnte? Ich hätte da ein paar Ideen für euren Account 👀',
+  kurz: 'Hey [Name]! Social Media Marketing für Immobilien & Bauträger – Interesse? 🚀',
+};
+
+const colors = ['#6c63ff','#3ecf8e','#f5a623','#4da6ff','#ff6b9d','#00d2d3','#ff9f43'];
+function getColor(s){ let h=0; for(let c of s) h+=c.charCodeAt(0); return colors[h%colors.length]; }
+function getInitials(h){ return h.replace('@','').slice(0,2).toUpperCase(); }
+
+// ─── AUTH ────────────────────────────────────────────────────────
+let currentUser = null;
+function doLogin(){
+  const u=document.getElementById('login-user').value.trim();
+  const p=document.getElementById('login-pass').value.trim();
+  const found = USERS.find(x=>x.name===u && x.pass===p);
+  if(found){
+    currentUser=found;
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app').style.display='flex';
+    if(found.role==='admin') document.getElementById('admin-nav').style.display='flex';
+    renderAll();
+    if(botRunning) startCountdown();
+  } else {
+    document.getElementById('login-error').style.display='block';
+    setTimeout(()=>document.getElementById('login-error').style.display='none',3000);
+  }
+}
+function doLogout(){
+  currentUser=null;
+  document.getElementById('app').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('login-user').value='';
+  document.getElementById('login-pass').value='';
+}
+
+// ─── NAVIGATION ──────────────────────────────────────────────────
+function showPanel(name, el){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  if(el) el.classList.add('active');
+  const titles={contacts:['Kontakte & Verlauf','Übersicht aller angeschriebenen Profile'],replies:['Antworten','Eingegangene Direktnachrichten'],ai:['KI & Nachrichten','Ton, Stil und API-Einstellungen'],search:['Zielgruppe','Hashtags und Filterkriterien'],admin:['Nutzerverwaltung','Zugänge verwalten']};
+  if(titles[name]){
+    document.getElementById('topbar-title').textContent=titles[name][0];
+    document.getElementById('topbar-sub').textContent=titles[name][1];
+  }
+  if(name==='admin') renderUsers();
+}
+
+// ─── RENDER ──────────────────────────────────────────────────────
+function renderAll(){ renderContacts(); renderReplies(); updateStats(); renderUsers(); }
+
+function renderContacts(){
+  const tb=document.getElementById('contacts-tbody');
+  tb.innerHTML=contacts.map((c,i)=>`
+    <tr>
+      <td><div class="contact-cell">
+        <div class="avatar" style="background:${getColor(c.handle)}">${getInitials(c.handle)}</div>
+        <div class="contact-info">
+          <div class="contact-handle">${c.handle}</div>
+          <div class="contact-note">${c.note}</div>
+        </div>
+      </div></td>
+      <td><span class="status-pill ${c.status}">${{sent:'Gesendet',replied:'Geantwortet',pending:'Ausstehend',blocked:'Blockiert'}[c.status]}</span></td>
+      <td style="color:var(--muted);font-size:12px;font-family:'DM Mono',monospace">${c.date}</td>
+      <td><div class="msg-preview">${c.msg}</div></td>
+      <td>
+        ${c.status!=='blocked'?`<button class="action-btn" onclick="stopContact(${i})">Stoppen</button>`:''}
+        ${c.status==='replied'?`<button class="action-btn send" style="margin-left:4px">Antworten</button>`:''}
+      </td>
+    </tr>`).join('');
+  document.getElementById('contact-count').textContent=contacts.length+' Einträge';
+}
+
+function renderReplies(){
+  const rl=document.getElementById('replies-list');
+  if(!replies.length){ rl.innerHTML='<div class="empty-state">Noch keine Antworten eingegangen.</div>'; return; }
+  rl.innerHTML=replies.map(r=>`
+    <div class="reply-card">
+      <div class="reply-head">
+        <div class="avatar" style="background:${getColor(r.handle)};width:28px;height:28px;font-size:11px">${getInitials(r.handle)}</div>
+        <strong style="font-size:14px">${r.handle}</strong>
+        <span class="status-pill replied" style="margin-left:4px;font-size:11px">Neue Antwort</span>
+        <span class="reply-time">${r.time}</span>
+      </div>
+      <div class="reply-msg">${r.text}</div>
+      <div class="reply-ai">
+        <div class="reply-ai-label">🤖 KI-Antwortvorschlag</div>
+        ${r.ai}
+      </div>
+      <div class="reply-actions">
+        <button class="btn-sm accent">✓ Vorschlag senden</button>
+        <button class="btn-sm">✏️ Bearbeiten</button>
+        <button class="btn-sm" style="color:var(--muted)">Ignorieren</button>
+      </div>
+    </div>`).join('');
+}
+
+function renderUsers(){
+  if(!currentUser||currentUser.role!=='admin') return;
+  const ul=document.getElementById('user-list');
+  ul.innerHTML=USERS.map((u,i)=>`
+    <div class="user-card">
+      <div class="avatar" style="background:${getColor(u.name)}">${u.name.slice(0,2).toUpperCase()}</div>
+      <div class="user-info">
+        <div class="user-name">${u.name}</div>
+        <div class="user-pass">Passwort: ${u.pass}</div>
+      </div>
+      <span class="user-role ${u.role}">${u.role==='admin'?'Admin':'Nutzer'}</span>
+      ${u.role!=='admin'?`<button class="action-btn" onclick="removeUser(${i})">Entfernen</button>`:''}
+    </div>`).join('');
+}
+
+function updateStats(){
+  const sent=contacts.filter(c=>c.status==='sent').length;
+  const replied=contacts.filter(c=>c.status==='replied').length;
+  const pending=contacts.filter(c=>c.status==='pending').length;
+  const blocked=contacts.filter(c=>c.status==='blocked').length;
+  document.getElementById('s-sent').textContent=sent+replied;
+  document.getElementById('s-replied').textContent=replied;
+  document.getElementById('s-pending').textContent=pending;
+  document.getElementById('s-blocked').textContent=blocked;
+  const total=sent+replied+blocked;
+  const rate=total>0?Math.round(replied/total*100):0;
+  document.getElementById('s-rate').textContent=rate+'% Reply-Rate';
+  document.getElementById('badge-pending').textContent=pending;
+  document.getElementById('badge-replies').textContent=replies.length;
+}
+
+// ─── ACTIONS ─────────────────────────────────────────────────────
+function stopContact(i){
+  contacts[i].status='blocked';
+  renderContacts(); updateStats();
+  notify('Kontakt gestoppt – keine weiteren Nachrichten.','red');
+}
+
+function openModal(){ document.getElementById('modal-add').classList.add('open'); }
+function closeModal(){ document.getElementById('modal-add').classList.remove('open'); }
+
+function addContact(){
+  const h=document.getElementById('new-handle').value.trim()||'@neukontakt';
+  const n=document.getElementById('new-note').value.trim()||'Manuell hinzugefügt';
+  const handle=h.startsWith('@')?h:'@'+h;
+  contacts.unshift({handle,note:n,status:'pending',date:'Jetzt',msg:'Wird vorbereitet...'});
+  renderContacts(); updateStats(); closeModal();
+  document.getElementById('new-handle').value='';
+  document.getElementById('new-note').value='';
+  notify('Kontakt hinzugefügt – in der Queue!','green');
+}
+
+function simulateSend(){
+  const p=contacts.find(c=>c.status==='pending');
+  if(p){
+    const selectedTone=document.querySelector('.tone-btn.active')?.textContent.toLowerCase()||'freundlich';
+    const key=Object.keys(tones).find(k=>selectedTone.includes(k))||'freundlich';
+    p.msg=tones[key].replace('[Name]',p.handle);
+    p.status='sent';
+    p.date='Jetzt';
+    renderContacts(); updateStats();
+    notify('✓ Nachricht an '+p.handle+' gesendet!','green');
+  } else {
+    notify('Keine ausstehenden Kontakte in der Queue.','');
+  }
+}
+
+function selectTone(btn,tone){
+  document.querySelectorAll('.tone-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('ai-preview').textContent=tones[tone];
+}
+
+function regenPreview(){
+  const active=document.querySelector('.tone-btn.active');
+  const toneKeys=Object.keys(tones);
+  const current=toneKeys.find(k=>active?.textContent.toLowerCase().includes(k))||'freundlich';
+  const variants=[
+    tones[current],
+    tones[current].replace('Interesse?','Wäre ein kurzes Gespräch möglich?'),
+    tones[current].replace('würde gerne kurz','ich hätte konkrete Ideen und'),
+  ];
+  document.getElementById('ai-preview').textContent=variants[Math.floor(Math.random()*variants.length)];
+}
+
+// ─── USER MANAGEMENT ─────────────────────────────────────────────
+function addUser(){
+  const n=document.getElementById('new-username').value.trim();
+  const p=document.getElementById('new-password').value.trim();
+  if(!n||!p){ notify('Benutzername und Passwort eingeben!','red'); return; }
+  if(USERS.find(u=>u.name===n)){ notify('Benutzername bereits vergeben.','red'); return; }
+  USERS.push({name:n,pass:p,role:'user'});
+  document.getElementById('new-username').value='';
+  document.getElementById('new-password').value='';
+  renderUsers();
+  notify('✓ Nutzer "'+n+'" wurde hinzugefügt!','green');
+}
+
+function removeUser(i){
+  if(USERS[i].role==='admin'){ notify('Admin kann nicht entfernt werden.','red'); return; }
+  const name=USERS[i].name;
+  USERS.splice(i,1);
+  renderUsers();
+  notify('Nutzer "'+name+'" wurde entfernt.','');
+}
+
+// ─── BOT CONTROL ─────────────────────────────────────────────────
+let botRunning=true;
+let countdownInterval=null;
+let countdownSecs=45;
+
+function toggleBot(){
+  botRunning=!botRunning;
+  const dot=document.getElementById('status-dot');
+  const txt=document.getElementById('status-text');
+  const btn=document.getElementById('toggle-btn');
+  const bar=document.getElementById('countdown-bar');
+  if(botRunning){
+    dot.classList.remove('off'); txt.textContent='Aktiv';
+    btn.textContent='⏸ Bot pausieren';
+    bar.style.display='flex';
+    startCountdown();
+    notify('Bot gestartet – Nachrichten werden gesendet.','green');
+  } else {
+    dot.classList.add('off'); txt.textContent='Pausiert';
+    btn.textContent='▶ Bot starten';
+    bar.style.display='none';
+    if(countdownInterval) clearInterval(countdownInterval);
+    notify('Bot pausiert.','');
+  }
+}
+
+function startCountdown(){
+  const delay=parseInt(document.getElementById('delay-range')?.value||90);
+  countdownSecs=delay;
+  if(countdownInterval) clearInterval(countdownInterval);
+  document.getElementById('countdown-bar').style.display='flex';
+  countdownInterval=setInterval(()=>{
+    if(!botRunning){ clearInterval(countdownInterval); return; }
+    countdownSecs--;
+    document.getElementById('countdown-num').textContent=countdownSecs+'s';
+    const pct=(countdownSecs/delay)*100;
+    document.getElementById('progress-fill').style.width=pct+'%';
+    if(countdownSecs<=0){
+      simulateSend();
+      countdownSecs=delay;
+    }
+  },1000);
+}
+
+// ─── NOTIFICATIONS ───────────────────────────────────────────────
+function notify(msg, type=''){
+  const n=document.getElementById('notif');
+  n.textContent=msg;
+  n.className='notif'+(type?' '+type:'');
+  void n.offsetWidth;
+  n.classList.add('show');
+  setTimeout(()=>n.classList.remove('show'),3000);
+}
+
+// ─── INIT ────────────────────────────────────────────────────────
+document.getElementById('login-user').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('login-pass').focus(); });
+</script>
+</body>
+</html>
